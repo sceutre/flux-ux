@@ -148,3 +148,15 @@ class LoginBackend extends BackendDirector {
    }
 }
 ```
+
+## doubts
+
+I'm quite happy with how it turned out, but some things could be better:
+
+- The need for both a FrontendDirector and BackendDirector, with loose coupling between them, seem like a lot of ceremony for example for a RPC based off a button click.  I need to use it in a largish real-world use case to really become a strong proponent.
+
+- ExecutiveView requires that if you override mount/unmount lifecycle methods then you call super, as this is where the view listens/unlistens to the directors.  Perhaps that is too clever, it is easy to have a working view suddenly stop working with directors when you make an unrelated change and add those lifecycle methods. 
+
+- Specifying action.add(this, this.callbackName) seems repetitive in the param list. Including the "this" is done to give us something to waitFor later (and conveniently lets us ignoring binding).  We could make the this.callbackName optional and default to thisArg["on" + actionNameCamelcased] but that seemed overly magical.
+
+- View is not a class unlike all the other things in the diagram.  The reason is that there was no functionality it adds to React.Component, and I did not want to suggest people always use classes instead of functional components (which I very much like).  As an aside, you can't have a functional ExecutiveView since you need the lifestyle methods to listen for changes from the directors.
