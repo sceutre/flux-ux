@@ -1,0 +1,18 @@
+{
+   "compilerOptions": {
+      "target": "es5",
+      "jsx": "react",
+      "module": "es6",
+      "moduleResolution": "node",
+      "baseUrl": "src",
+      "strict": true,
+      "importHelpers": true
+   },
+   "exclude": [
+      "node_modules",
+      "build",
+      "webpack",
+      "scripts",
+      "dist"
+   ]
+}

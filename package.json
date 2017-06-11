@@ -1,0 +1,12 @@
+{
+   "name": "adv",
+   "version": "1.0.0",
+   "description": "Typescript and signals based flux implementation",
+   "repository": "git@github.com:sceutre/adv.git",
+   "author": "sceutre@gmail.com",
+   "license": "MIT",
+   "devDependencies": {
+      "@types/react": "^15.0.27"
+   },
+   "dependencies": {}
+}
