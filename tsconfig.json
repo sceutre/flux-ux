@@ -5,8 +5,7 @@
       "module": "es6",
       "moduleResolution": "node",
       "baseUrl": "src",
-      "strict": true,
-      "importHelpers": true
+      "strict": true
    },
    "exclude": [
       "node_modules",
