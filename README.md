@@ -16,54 +16,55 @@ I took a shot at a different names for the core concepts.
 ## the things in the diagram
 
 <u>**Action**</u>
-    - an Action represents a multicast function of any types, type safe through typescript
-    - these are basically [signals](https://github.com/robertpenner/as3-signals)
-    - there will be a lot of actions, but they are easy to make
+- an Action represents a multicast function of any types, type safe through typescript
+- these are basically [signals](https://github.com/robertpenner/as3-signals)
+- there will be a lot of actions, but they are easy to make
+- although the can be defined anywhere, suggestions is inside of file containing primary-use-Director
 
 <u>**Component**</u>
-    - these are exactly react components
-    - no business logic, no asynchronous calls
-    - the only state is "ui state"
+- these are exactly react components
+- no business logic, no asynchronous calls
+- the only state is "ui state"
 
 <u>**ExecComponent**</u>
-    - are forceUpdated when one of their Directors-of-interest changes
+- are forceUpdated when one of their Directors-of-interest changes
 
 <u>**Director**</u>
-    - responsible for business logic
-    - basically a rename of Store
-    - is a singleton
-    - is read-only, only way changes are made are in callbacks of Actions-of-interest
-    - no asynchronous calls -- go through a backend instead
+- responsible for business logic
+- basically a rename of Store
+- is a singleton
+- is read-only, only way changes are made are in callbacks of Actions-of-interest
+- no asynchronous calls -- go through a backend instead
 
 <u>**Backends**</u>
-    - is a singleton
-    - asynchronously talks to servers doing rpc and push
-    - is invoked by Director, ie a backend is a service provider for director
-    - server responses do not get directly delivered anywhere (eg no callbacks).  Instead all server -> comms are consumed with backend or cause an Action to be fired
+- is a singleton
+- asynchronously talks to servers doing rpc and push
+- is invoked by Director, ie a backend is a service provider for director
+- server responses do not get directly delivered anywhere (eg no callbacks).  Instead all server -> comms are consumed with backend or cause an Action to be fired
 
 <u>**Dispatcher**</u>
-    - singleton central dispatcher used by Actions
-    - can wait for other Directors to be finsihed processing Action (with cycle protection)
+- singleton central dispatcher used by Actions
+- can wait for other Directors to be finsihed processing Action (with cycle protection)
 
 ## example
 
 ```
-// in login-actions.ts
+// in actions.ts
+
+// it's unfortunate, but actions are grouped in a separate file to avoid module dependency cycles
 
 import {Action} from "adv";
 
-export const loginSubmittedAction 
-   = new Action<(username:string, password:string) => void>("Login Submitted");
-export const loginDoneAction 
-   = new Action<(succeeded:boolean, error:string) => void>("Login Done");
+export const loginSubmittedAction = new Action<(username:string, password:string) => void>("Login Submitted");
+export const loginDoneAction = new Action<(succeeded:boolean, error:string) => void>("Login Done");
 
 
 // in LoginForm.tsx
 
 import "*" as React from "react";
 import {ExecComponent} from "adv";
-import {loginSubmittedAction} from "../../actions/login";
-import {loginDirector} from "../../directors/login";
+import {loginSubmittedAction} from "./actions";
+import {loginDirector} from "./loginDirector";
 
 interface MyProps { /* ... */ }
 
@@ -83,7 +84,7 @@ export class LoginForm extends ExecComponent<MyProps, {}> {
 
 // in loginDirector.ts
 
-import {loginSubmittedAction, loginDoneAction} from "../../actions/login";
+import {loginSubmittedAction, loginDoneAction} from "./actions";
 import {login} from "./loginBackend";
 import {Director} from "adv";
 
@@ -113,8 +114,8 @@ export const loginDirector = new LoginDirector() as Readonly<LoginDirector>;
 
 // in loginBackend.ts
 
-import {loginDoneAction} from "../../actions/login";
-import {server} from "../../server";
+import {loginDoneAction} from "./actions";
+import {server} from "./server";
 
 // although we could implement this as a singleton class, it could also be
 // a module since it's not passed around and has no inherited behavior
