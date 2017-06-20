@@ -26,8 +26,8 @@ first seems like a wrapper on a map or database or something.
 ## the diagram
 
 Here's an architecture diagram which is pretty much the same as Facebooks,
-however it hilights what to me are the more interesting part of the pattern,
-the various tight versus loose coupling, and sync vs async calls.
+however it hilights what to me are the more interesting parts of the pattern,
+the various tight versus loose couplings, and sync vs async calls.
 
 ![architecture diagram](https://sceutre.github.io/flux-ux/diagram.svg)
 
@@ -88,7 +88,8 @@ architectures main reason for disallowing).
 Balanced against those gains is the increased ceromony.  In our chatbox app we have around 1000 server rpcs
 calls in our codebase, and about 30 or so push call sites.  The push is fine as actions (and indeed that's
 basically what we're doing) but the 1000 rpc calls means naively 1000 actions to communicate the results.  
-Hoefully we'd abe able to hide some of those calls inside the Bridge as a higher order invocation. We could
+
+Hopefully we'd abe able to hide some of those calls inside the Bridge as a higher order invocation. We could
 also have a generic rpcFinished(requestId, data) action although that seems like a modelling fail.  More
 experience with large code bases is required.
 
