@@ -112,31 +112,33 @@ export const loginDoneAction = new Action<(succeeded:boolean, error:string) => v
 import "*" as React from "react";
 import {ExecComponent} from "flux-ux";
 import {loginSubmittedAction} from "./actions";
-import {loginDirector} from "./loginDirector";
+import {uxLogin} from "./UxLogin";
 
 interface MyProps { /* ... */ }
 
-export class LoginForm extends ExecComponent<MyProps, {}> {
+export class LoginForm extends ExecComponent<MyProps> {
    // ...
 
-   directors() { return [loginDirector]; }
+   constructor(props) {
+      super(props, uxLogin);
+   }
 
    onLoginSubmit = () => loginSubmittedAction.fire(this.username, this.password);
 
    render() {
-      if (loginDirector.inProgress) return <Spinner />;
+      if (uxLogin.inProgress) return <Spinner />;
       // ...
    }
 }
           
 
-// in loginDirector.ts
+// in UxLogin.ts
 
 import {loginSubmittedAction, loginDoneAction} from "./actions";
-import {login} from "./loginBackend";
-import {Director} from "flux-ux";
+import {login} from "./loginBridge";
+import {UX} from "flux-ux";
 
-class LoginDirector extends Director {
+class UxLogin extends UX {
    inProgress = false;
 
    constructor() {
@@ -157,10 +159,10 @@ class LoginDirector extends Director {
       this.changed();
    }
 }
-export const loginDirector = new LoginDirector() as Readonly<LoginDirector>;
+export const uxLogin = new UxLogin() as Readonly<UxLogin>;
 
 
-// in loginBackend.ts
+// in loginBridge.ts
 
 import {loginDoneAction} from "./actions";
 import {server} from "./server";
