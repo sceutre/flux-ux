@@ -14,19 +14,19 @@ leveraging typescript as well as I felt they could be.
 
 Additionally I had issues with the name Store.  I mean, it's a fine
 name and I think if you think about it hard enough it makes perfect
-sense.  What I felt made even *more* sense though was to call them
+sense.  What I felt made even *more* sense though was to call it a
 UX.  The classes really are in charge of the user experience and in
 my mind storing state is a less interesting part of what they do.  It
 seems to read better in my code too todoStore vs uxTodo.  They both
 do the same thing, but the second to me seems to scream that it is 
 responsible for coordinating the entire "Todo" part of my app while the
-first seems like a wrapper on a map or database or something.
+first seems like a wrapper on a map or database.
 
 
 ## the diagram
 
-Here's an architecture diagram which is pretty much the same as Facebooks,
-however it hilights what to me are the more interesting parts of the pattern,
+Here's an architecture diagram which is pretty much the same as Facebook's,
+however it highlights what to me are the more interesting parts of the pattern,
 the various tight versus loose couplings, and sync vs async calls.
 
 ![architecture diagram](https://sceutre.github.io/flux-ux/diagram.svg)
@@ -49,7 +49,8 @@ the various tight versus loose couplings, and sync vs async calls.
 - The can have state, but it can only be "ui state"
 
 <u>**ExecComponent**</u>
-- These are special components that read from UXs and listen for changes (which by default forceUpdates them).
+- These are "executive" components that read from UXs and listen for changes (which by default forceUpdates them).
+  They tend to be the at the start of the UI component hierarchy.
 
 <u>**UX**</u>
 - These are responsible for business logic and state storage in the app (eg a rename of Store)
@@ -59,17 +60,18 @@ the various tight versus loose couplings, and sync vs async calls.
 - There are no asynchronous calls--when we desire an async call these go through a bridge
 
 <u>**Bridge**</u>
-- These are responsible for talking to servers, doing rpc's and receive push communications
+- These are responsible for talking to servers, doing remote procedure calls and receiving push communications.
 - It is also a singleton.
-- Unlike UXs, bridges expose to public state to be read.  They internally may be quite complex
-  (eg retrying failed calls, maintaining a connection pool) but keep that all in house.
+- Unlike UXs, bridges expose no public state to be read.  They internally may be quite complex
+  (eg retrying failed calls, maintaining a connection pool) but keep all that private.
 - Bridges expose behvaior to be invoked by UXs, ie it's a service provider for UX.
-- Invocations do not include callbacks.  Instead, the bridge fire an action if it wishes to 
+- These invocations notably do not include callbacks.  Instead, the bridge fires an action if it wishes to 
   inform the rest of the app about the result of a server operation.
 
 <u>**Dispatcher**</u>
 - Singleton central dispatcher used by Actions
 - Can wait for other UXs to be finsihed processing Action (with cycle protection)
+- Is the place to insert middleware to log all actions or serialize them
 
 ## discussion
 
@@ -80,17 +82,17 @@ than this in a large application.
 
 What's more troubling is the async model using UX and Bridge.  The UX as a singleton is technically a fine
 place to be doing async calls, and given async/await and a nice code-generated infrastructure these methods
-do not have to be long.  However, allowing UXs to make async calls means that their methods would be more
+do not have to be long.  However, allowing UXs to make async calls means that their behavior would be more
 complex to understand (which seemed to be Facebook's initial rationale for disallowing) and that the current
 state of the UI would not longer be derivable solely from the sequence of Actions (which seems other flux
 architectures main reason for disallowing).
 
-Balanced against those gains is the increased ceromony.  In our chatbox app we have around 1000 server rpcs
+Balanced against those gains is the increased ceromony.  In our chatbox app we have around 1000 server rpc
 calls in our codebase, and about 30 or so push call sites.  The push is fine as actions (and indeed that's
 basically what we're doing) but the 1000 rpc calls means naively 1000 actions to communicate the results.  
 
-Hopefully we'd abe able to hide some of those calls inside the Bridge as a higher order invocation. We could
-also have a generic rpcFinished(requestId, data) action although that seems like a modelling fail.  More
+Hopefully we'd able to hide some of those calls inside the Bridge as a higher order invocation. We could
+also have a generic rpcFinished(requestId, data) action although that seems unnatural.  More
 experience with large code bases is required.
 
 
