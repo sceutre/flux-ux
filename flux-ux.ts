@@ -2,7 +2,7 @@ import * as React from "react";
 
 interface Listener {
    callback: Function;
-   obj: Director;
+   obj: UX;
    status: number;
 }
 
@@ -14,51 +14,51 @@ interface InProgress {
    doneId: number;
 }
 
-type Director_RO = Readonly<Director>;
+type ReadonlyUX = Readonly<UX>;
 
 export class Action<F extends Function> {
-   private listeners:Listener[] = [];
+   private listeners: Listener[] = [];
 
-   constructor(public name:string) {}
+   constructor(public name: string) { }
 
-   add(dir: Director, callback: F):void {
-      this.listeners.push({ callback: callback, obj: dir, status: 0});
+   add(dir: UX, callback: F): void {
+      this.listeners.push({ callback: callback, obj: dir, status: 0 });
    }
 
-   remove(dir: Director):void {
+   remove(dir: UX): void {
       this.listeners = this.listeners.filter(x => x.obj != dir);
    }
 
-   fire:F = ((...args:any[]):void => {
+   fire: F = ((...args: any[]): void => {
       dispatcher.dispatchAction(this.listeners, this, args);
    }) as any;
-
 }
 
-export class ExecComponent<P, S> extends React.Component<P, S> {
-   directors(): Director_RO[] {
-      return [];
+export class ExecComponent<P={}, S={}> extends React.Component<P, S> {
+   private ux: ReadonlyUX[];
+
+   constructor(props: P, ...ux: ReadonlyUX[]) {
+      super(props);
+      this.ux = ux;
    }
 
    componentDidMount(): void {
-      for (let d of this.directors())
+      for (let d of this.ux)
          d.addView(this);
    }
 
    componentWillUnmount(): void {
-      for (let d of this.directors())
+      for (let d of this.ux)
          d.removeView(this);
    }
 
-   onDirectorChanged(dir: Director) {
+   onChangedUX(dir: UX) {
       this.forceUpdate();
    }
 }
 
-export class Director {
-   private views: ExecComponent<any,any>[] = [];
-
-   constructor(public name: string) { }
+export class UX {
+   private views: ExecComponent<any, any>[] = [];
 
    addView(view: ExecComponent<any, any>): void {
       if (this.views.indexOf(view) < 0) {
@@ -75,8 +75,14 @@ export class Director {
 
    changed(): void {
       for (let view of this.views) {
-         view.onDirectorChanged(this);
+         view.onChangedUX(this);
       }
+   }
+
+   snapshot(): any {
+   }
+
+   restore(data: any): void {
    }
 }
 
@@ -87,6 +93,7 @@ class Dispatcher {
    dispatchAction(listeners: Listener[], action: Action<any>, args: any[]) {
       if (this.inProgress)
          throw new Error(`Trying to fire ${action.name} while another action ${this.inProgress.action.name} is firing.  Actions begetting actions is not allowed as it makes behavior very complex.`);
+      this.onDispatched(action.name, args);
       this.inProgress = {
          action: action,
          args: args,
@@ -102,19 +109,21 @@ class Dispatcher {
       }
    }
 
-   waitFor(directors: Director[]) {
+   waitFor(others: UX[]) {
       if (this.inProgress)
-         this.dispatchLoop(this.inProgress, directors);
+         this.dispatchLoop(this.inProgress, others);
    }
 
-   private dispatchLoop(inProgress: InProgress, onlyDirectors?: Director[]) {
+   onDispatched: (name: string, args: any[]) => void = (name, args) => {};
+
+   private dispatchLoop(inProgress: InProgress, whitelist?: UX[]) {
       for (let i = 0, n = inProgress.listeners.length; i < n; i++) {
          let listener = inProgress.listeners[i];
-         if (onlyDirectors) {
-            if (onlyDirectors.indexOf(listener.obj) < 0)
+         if (whitelist) {
+            if (whitelist.indexOf(listener.obj) < 0)
                continue;
             if (listener.status == inProgress.startedId)
-               throw new Error(`Detected a waitFor cycle with ${listener.obj.name}`);
+               throw new Error("Detected a waitFor cycle");
          }
          if (listener.status < inProgress.startedId) {
             listener.status = inProgress.startedId;
@@ -126,6 +135,4 @@ class Dispatcher {
    }
 }
 
-let dispatcher: Dispatcher = new Dispatcher();
-
-export const waitFor = (...directors: Director[]) => dispatcher.waitFor(directors);
+export let dispatcher: Dispatcher = new Dispatcher();
